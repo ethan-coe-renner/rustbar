@@ -34,15 +34,15 @@ fn battery() -> u32 {
 }
 
 fn news() -> u32 {
-    read_num_from_file("/home/ethan/.local/share/newsunread")
+    read_num_from_file("~/.local/share/newsunread")
 }
 
 fn tasks() -> u32 {
-    read_num_from_file( "/home/ethan/.local/share/tasks")
+    read_num_from_file( "~/.local/share/tasks")
 }
 
 fn updates() -> u32 {
-    read_num_from_file( "/home/ethan/.local/share/updates")
+    read_num_from_file( "~/.local/share/updates")
 }
 
 fn read_num_from_file(filepath: &'static str) -> u32 {
