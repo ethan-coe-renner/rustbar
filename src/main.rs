@@ -3,14 +3,16 @@ use chrono::Local;
 use std::fs::File;
 use std::io::{BufReader, BufRead};
 use std::{thread, time};
+use std::process::Command;
 
 fn main() {
     let delay = time::Duration::from_millis(6000);
     loop {
-	println!("UPD: {} | TODO: {} | NEWS: {} | BAT: {} | {}",
+	println!("UPD: {} | TODO: {} | NEWS: {} | VOL: {} | BAT: {} | {}",
 		 updates(),
 		 tasks(),
 		 news(),
+		 audio(),
 		 battery(),
 		 datetime(),
 	);
@@ -43,6 +45,28 @@ fn tasks() -> u32 {
 
 fn updates() -> u32 {
     read_num_from_file( "~/.local/share/updates")
+}
+
+fn audio() -> String {
+    let volumeoutput = Command::new("pamixer")
+        .arg("--get-volume")
+	.output()
+	.expect("failed to execute process");
+
+    let muteoutput = Command::new("pamixer")
+        .arg("--get-mute")
+	.output()
+	.expect("failed to execute process");
+
+    let volume = String::from_utf8_lossy(&volumeoutput.stdout).chars().filter(|c| c.is_digit(10)).collect::<String>().parse::<u32>().unwrap();
+
+    let muted: String = String::from_utf8(muteoutput.stdout).unwrap();
+
+    match muted.as_ref() {
+	"false\n" => volume.to_string() + "%",
+	"true\n" => volume.to_string() + "% (muted)",
+	_ => "error".to_string()
+    }
 }
 
 fn read_num_from_file(filepath: &'static str) -> u32 {
