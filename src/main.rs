@@ -25,6 +25,10 @@ enum Block {
     Line(Vec<Elem>),
 }
 
+const WHITE: &'static str = "#d8dee9";
+const GREY: &'static str = "#4c566a";
+const GREEN: &'static str = "#a3be8c";
+
 fn main() {
     let delay = time::Duration::from_millis(6000);
 
@@ -54,27 +58,43 @@ fn main() {
 }
 
 fn datetime() -> Elem {
-    gen_elem("", &Local::now().format("%H:%M, %a %d %b %Y").to_string(), "#5e81ac")
+    gen_elem("", &Local::now().format("%H:%M, %a %d %b %Y").to_string(), WHITE)
 }
 
 fn battery() -> Elem {
     let bat0percent = read_num_from_file("/sys/class/power_supply/BAT0/capacity");
     let bat1percent = read_num_from_file("/sys/class/power_supply/BAT1/capacity");
+    let batstatus = read_line_from_file("/sys/class/power_supply/BAT1/status");
 
-
-    gen_elem("BAT: ", &(bat0percent + bat1percent).to_string(), "#d8dee9")
+    match batstatus.as_ref() {
+	"Discharging\n" => gen_elem("BAT: ", &(bat0percent + bat1percent).to_string(), WHITE),
+	"Charging\n" => gen_elem("BAT: ", &(bat0percent + bat1percent).to_string(), GREEN),
+	_ => gen_elem("", "error", GREY),
+    }
 }
 
 fn news() -> Elem {
-    gen_elem("NEWS: ", &read_num_from_file("~/.local/share/newsunread").to_string(), "#d8dee9")
+    let unread = read_num_from_file("~/.local/share/newsunread");
+    match unread {
+	0 => gen_elem("NEWS: ", &unread.to_string(), GREY),
+	_ => gen_elem("NEWS: ", &unread.to_string(), WHITE)
+    }
 }
 
 fn tasks() -> Elem {
-    gen_elem("TODO: ", &read_num_from_file("~/.local/share/tasks").to_string(), "d8dee9")
+    let tasks = read_num_from_file("~/.local/share/tasks");
+    match tasks {
+	0=> gen_elem("TODO: ", &tasks.to_string(), GREY),
+	_=> gen_elem("TODO: ", &tasks.to_string(), WHITE)
+    }
 }
 
 fn updates() -> Elem {
-    gen_elem("UPD: ", &read_num_from_file("~/.local/share/updates").to_string(), "d8dee9")
+    let updates = read_num_from_file("~/.local/share/updates");
+    match updates {
+	0 => gen_elem("UPD: ", &updates.to_string(), "4c566a"),
+	_ => gen_elem("UPD: ", &updates.to_string(), "d8dee9"),
+    }
 }
 
 fn audio() -> Elem {
@@ -93,9 +113,9 @@ fn audio() -> Elem {
     let muted: String = String::from_utf8(muteoutput.stdout).unwrap();
 
     match muted.as_ref() {
-	"false\n" => gen_elem("VOL: ", &volume.to_string(), "#d8dee9"),
-	"true\n" => gen_elem("VOL: ", &volume.to_string(), "#4c566a"),
-	_ => gen_elem("VOL: ", &volume.to_string(), "#4c566a"),
+	"false\n" => gen_elem("VOL: ", &volume.to_string(), WHITE),
+	"true\n" => gen_elem("VOL: ", &volume.to_string(), GREY),
+	_ => gen_elem("VOL: ", &volume.to_string(), GREY),
     }
 }
 
@@ -111,6 +131,19 @@ fn read_num_from_file(filepath: &'static str) -> u32 {
     let _ = buffer.read_line(&mut line);
 
     line.chars().filter(|c| c.is_digit(10)).collect::<String>().parse::<u32>().unwrap()
+}
+
+fn read_line_from_file(filepath: &'static str) -> String {
+    let file = match File::open(&filepath) {
+	Ok(file) => file,
+	Err(_) => return "".to_string()
+    };
+
+    let mut buffer = BufReader::new(file);
+
+    let mut line = String::new();
+    let _ = buffer.read_line(&mut line);
+    line
 }
 
 fn gen_elem(name: &'static str, text: &str, color: &'static str) -> Elem {
