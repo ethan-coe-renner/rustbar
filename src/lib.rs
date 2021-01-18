@@ -69,12 +69,12 @@ pub fn audio() -> Elem {
     let volumeoutput = Command::new("pamixer")
         .arg("--get-volume")
         .output()
-        .expect("failed to execute process");
+        .expect("failed to get volume");
 
     let muteoutput = Command::new("pamixer")
         .arg("--get-mute")
         .output()
-        .expect("failed to execute process");
+        .expect("failed to get mute status");
 
     let volume = String::from_utf8_lossy(&volumeoutput.stdout)
         .chars()
@@ -89,6 +89,21 @@ pub fn audio() -> Elem {
         "false\n" => gen_elem("VOL: ", &volume.to_string(), WHITE),
         "true\n" => gen_elem("VOL: ", &volume.to_string(), GREY),
         _ => gen_elem("VOL: ", &volume.to_string(), GREY),
+    }
+}
+
+pub fn music() -> Elem {
+    let music_info = Command::new("cmus-remote")
+        .arg("-C")
+        .arg("format_print '%a - %t'")
+        .output()
+        .expect("failed to get music_info");
+
+    let music_info = String::from_utf8_lossy(&music_info.stdout).replace("\n","");
+
+    match music_info.as_ref() {
+	"" => gen_elem("MUS: ", "none", GREY),
+	_ => gen_elem("MUS: ", &music_info, WHITE)
     }
 }
 

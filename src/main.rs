@@ -10,8 +10,8 @@ fn main() {
     println!("{}\n[\n[]\n", serde_json::to_string(&header).unwrap());
     
     loop {
-
 	let line = vec!(
+	    rustbar::music(),
 	    rustbar::updates(),
 	    rustbar::tasks(),
 	    rustbar::news(),
