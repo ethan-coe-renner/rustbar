@@ -19,7 +19,6 @@ pub struct Header {
 
 const WHITE: &'static str = "#d8dee9";
 const GREY: &'static str = "#4c566a";
-const GREEN: &'static str = "#a3be8c";
 
 pub fn datetime() -> Elem {
     gen_elem(
@@ -32,13 +31,8 @@ pub fn datetime() -> Elem {
 pub fn battery() -> Elem {
     let bat0percent = read_num_from_file("/sys/class/power_supply/BAT0/capacity");
     let bat1percent = read_num_from_file("/sys/class/power_supply/BAT1/capacity");
-    let batstatus = read_line_from_file("/sys/class/power_supply/BAT1/status");
+    gen_elem("BAT: ", &(bat0percent + bat1percent).to_string(), WHITE)
 
-    match batstatus.as_ref() {
-        "Discharging\n" => gen_elem("BAT: ", &(bat0percent + bat1percent).to_string(), WHITE),
-        "Charging\n" => gen_elem("BAT: ", &(bat0percent + bat1percent).to_string(), GREEN),
-        _ => gen_elem("", "error", GREY),
-    }
 }
 
 pub fn news() -> Elem {
@@ -119,19 +113,6 @@ fn read_num_from_file(filepath: &'static str) -> u32 {
     let _ = buffer.read_line(&mut line);
 
     line.chars().filter(|c| c.is_digit(10)).collect::<String>().parse::<u32>().unwrap()
-}
-
-fn read_line_from_file(filepath: &'static str) -> String {
-    let file = match File::open(&filepath) {
-	Ok(file) => file,
-	Err(_) => return "".to_string()
-    };
-
-    let mut buffer = BufReader::new(file);
-
-    let mut line = String::new();
-    let _ = buffer.read_line(&mut line);
-    line
 }
 
 fn gen_elem(name: &'static str, text: &str, color: &'static str) -> Elem {
